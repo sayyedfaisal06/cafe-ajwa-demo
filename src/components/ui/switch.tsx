@@ -1,6 +1,11 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 import { cn } from "cn"
+import { CheckIcon } from "lucide-react"
 
+/*
+ * The thumb sits inside a padded track and shows a check mark when on, so the state is not
+ * shown by colour alone.
+ */
 function Switch({
   className,
   size = "default",
@@ -13,15 +18,33 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent px-0.5 outline-none",
+        "transition-colors duration-200 motion-reduce:transition-none",
+        "after:absolute after:-inset-x-3 after:-inset-y-2",
+        "data-[size=default]:h-7 data-[size=default]:w-12 data-[size=sm]:h-6 data-[size=sm]:w-10",
+        "data-unchecked:bg-input hover:data-unchecked:bg-[color-mix(in_oklch,var(--input),black_8%)] data-checked:bg-primary hover:data-checked:bg-[color-mix(in_oklch,var(--primary),white_10%)]",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background group-has-focus-visible/field-label:ring-0",
+        "aria-invalid:ring-2 aria-invalid:ring-destructive/40",
+        "data-disabled:cursor-not-allowed data-disabled:opacity-45",
         className
       )}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-unchecked:bg-foreground"
-      />
+        className={cn(
+          "pointer-events-none flex items-center justify-center rounded-full bg-card text-primary shadow-[0_1px_2px_rgb(0_0_0/0.25)]",
+          "transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "group-data-[size=default]/switch:size-5.5 group-data-[size=sm]/switch:size-4.5",
+          "data-checked:translate-x-[calc(100%-2px)] data-unchecked:translate-x-0"
+        )}
+      >
+        <CheckIcon
+          strokeWidth={3.5}
+          aria-hidden="true"
+          className="size-3 opacity-0 transition-opacity duration-150 group-data-checked/switch:opacity-100 group-data-[size=sm]/switch:size-2.5 motion-reduce:transition-none"
+        />
+      </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   )
 }

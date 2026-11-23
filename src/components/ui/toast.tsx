@@ -33,7 +33,7 @@ function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
     <ToastPrimitive.Root
       data-slot="toast"
       className={cn(
-        "group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-2xl border bg-popover text-popover-foreground shadow-lg will-change-transform outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-2xl border border-foreground/8 bg-popover text-popover-foreground shadow-overlay will-change-transform outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
         "[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]",
         "h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]",
         "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-['']",
@@ -72,7 +72,7 @@ function ToastTitle({ className, ...props }: ToastPrimitive.Title.Props) {
   return (
     <ToastPrimitive.Title
       data-slot="toast-title"
-      className={cn("text-sm font-medium", className)}
+      className={cn("text-sm font-semibold", className)}
       {...props}
     />
   )
@@ -153,7 +153,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
   if (type === "error") {
     icon = (
-      <OctagonXIcon className="text-destructive" aria-hidden="true" />
+      <OctagonXIcon aria-hidden="true" />
     )
   }
 
@@ -170,7 +170,14 @@ function ToastIcon({ type }: { type: string | undefined }) {
   return (
     <span
       data-slot="toast-icon"
-      className="shrink-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4"
+      data-type={type}
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-[1.125rem]",
+        "data-[type=success]:bg-[color-mix(in_oklch,var(--success)_12%,var(--popover))] data-[type=success]:text-success",
+        "data-[type=warning]:bg-[color-mix(in_oklch,var(--warning)_12%,var(--popover))] data-[type=warning]:text-warning",
+        "data-[type=error]:bg-[color-mix(in_oklch,var(--destructive)_10%,var(--popover))] data-[type=error]:text-destructive",
+        "data-[type=info]:bg-highlight data-[type=info]:text-primary"
+      )}
     >
       {icon}
     </span>

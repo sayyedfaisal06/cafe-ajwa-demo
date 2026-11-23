@@ -14,7 +14,7 @@ function Tabs({
       data-slot="tabs"
       data-orientation={orientation}
       className={cn(
-        "group/tabs flex gap-2 data-horizontal:flex-col",
+        "group/tabs flex gap-3 data-horizontal:flex-col",
         className
       )}
       {...props}
@@ -22,13 +22,20 @@ function Tabs({
   )
 }
 
+/*
+ * default: a bordered track where a solid green pill slides to the active tab, matching the
+ * segment toggle. line: plain text tabs over a divider with a green underline that slides to the active
+ * tab. The slide is skipped when the visitor asks for reduced motion. Wrap a long line list in
+ * ScrollRow so it scrolls on small screens.
+ */
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
+  "group/tabs-list relative isolate inline-flex w-fit items-center text-muted-foreground group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col group-data-vertical/tabs:items-stretch",
   {
     variants: {
       variant: {
-        default: "bg-muted",
-        line: "gap-1 bg-transparent",
+        default:
+          "gap-1 rounded-full border border-input/50 bg-card p-[3px] group-data-horizontal/tabs:h-11 group-data-vertical/tabs:rounded-2xl",
+        line: "gap-6 border-border group-data-horizontal/tabs:h-11 group-data-horizontal/tabs:border-b group-data-vertical/tabs:gap-1 group-data-vertical/tabs:border-l",
       },
     },
     defaultVariants: {
@@ -40,6 +47,7 @@ const tabsListVariants = cva(
 function TabsList({
   className,
   variant = "default",
+  children,
   ...props
 }: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
   return (
@@ -48,7 +56,22 @@ function TabsList({
       data-variant={variant}
       className={cn(tabsListVariants({ variant }), className)}
       {...props}
-    />
+    >
+      {children}
+      <TabsPrimitive.Indicator
+        data-slot="tabs-indicator"
+        className={cn(
+          "absolute -z-10 transition-[left,top,width,height] duration-200 ease-out motion-reduce:transition-none",
+          // default: a solid green pill behind the active tab
+          "group-data-[variant=default]/tabs-list:top-(--active-tab-top) group-data-[variant=default]/tabs-list:left-(--active-tab-left) group-data-[variant=default]/tabs-list:h-(--active-tab-height) group-data-[variant=default]/tabs-list:w-(--active-tab-width)",
+          "group-data-[variant=default]/tabs-list:rounded-full group-data-[variant=default]/tabs-list:bg-primary group-data-[variant=default]/tabs-list:shadow-[inset_0_-2px_0_0_rgb(0_0_0/0.28)]",
+          // line: a green bar on the divider
+          "group-data-[variant=line]/tabs-list:rounded-full group-data-[variant=line]/tabs-list:bg-primary",
+          "group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:-bottom-px group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:left-(--active-tab-left) group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:h-0.5 group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:w-(--active-tab-width)",
+          "group-data-vertical/tabs:group-data-[variant=line]/tabs-list:-left-px group-data-vertical/tabs:group-data-[variant=line]/tabs-list:top-(--active-tab-top) group-data-vertical/tabs:group-data-[variant=line]/tabs-list:h-(--active-tab-height) group-data-vertical/tabs:group-data-[variant=line]/tabs-list:w-0.5"
+        )}
+      />
+    </TabsPrimitive.List>
   )
 }
 
@@ -57,10 +80,16 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 aria-disabled:pointer-events-none aria-disabled:opacity-50 dark:text-muted-foreground dark:hover:text-foreground group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent dark:group-data-[variant=line]/tabs-list:data-active:border-transparent dark:group-data-[variant=line]/tabs-list:data-active:bg-transparent",
-        "data-active:bg-background data-active:text-foreground dark:data-active:border-input dark:data-active:bg-input/30 dark:data-active:text-foreground",
-        "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
+        "relative inline-flex h-full flex-1 items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap outline-none select-none",
+        "transition-colors duration-150 motion-reduce:transition-none",
+        "hover:text-foreground data-active:text-primary group-data-[variant=default]/tabs-list:not-data-active:hover:text-primary group-data-[variant=default]/tabs-list:data-active:text-primary-foreground",
+        // A count badge inside the active green tab flips to cream so it stays readable.
+        "group-data-[variant=default]/tabs-list:data-active:[&_[data-slot=badge]]:bg-primary-foreground group-data-[variant=default]/tabs-list:data-active:[&_[data-slot=badge]]:text-primary",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "group-data-[variant=default]/tabs-list:rounded-full group-data-[variant=default]/tabs-list:px-4 group-data-vertical/tabs:group-data-[variant=default]/tabs-list:h-9 group-data-vertical/tabs:group-data-[variant=default]/tabs-list:justify-start",
+        "group-data-[variant=line]/tabs-list:flex-none group-data-[variant=line]/tabs-list:rounded-sm group-data-vertical/tabs:group-data-[variant=line]/tabs-list:justify-start group-data-vertical/tabs:group-data-[variant=line]/tabs-list:py-2 group-data-vertical/tabs:group-data-[variant=line]/tabs-list:pl-4",
         className
       )}
       {...props}

@@ -2,26 +2,52 @@ import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
+import type { ComponentProps } from "react"
 
+/*
+ * Badges are small tags with soft corners, so they never read as pill shaped buttons. Tinted
+ * variants carry a hairline border in the same colour. Put a BadgeDot first for live status,
+ * and use the count shape for numbers such as the cart count.
+ */
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  [
+    "group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden rounded-md border font-semibold whitespace-nowrap tabular-nums",
+    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    "[&>svg]:pointer-events-none [&>svg]:shrink-0",
+  ],
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        secondary:
-          "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+        default:
+          "border-transparent bg-primary text-primary-foreground [a]:hover:bg-[color-mix(in_oklch,var(--primary),white_10%)]",
+        secondary: "border-border bg-secondary text-secondary-foreground [a]:hover:bg-accent",
+        outline: "border-input/60 bg-transparent text-foreground [a]:hover:bg-secondary",
+        success:
+          "border-success/25 bg-[color-mix(in_oklch,var(--success)_10%,var(--background))] text-success",
+        warning:
+          "border-warning/25 bg-[color-mix(in_oklch,var(--warning)_10%,var(--background))] text-warning",
         destructive:
-          "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
-        outline:
-          "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        ghost:
-          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border-destructive/25 bg-[color-mix(in_oklch,var(--destructive)_8%,var(--background))] text-destructive",
+      },
+      size: {
+        sm: "h-5 gap-1 px-1.5 text-[0.6875rem] [&>svg]:size-3",
+        default: "h-6 gap-1 px-2 text-xs [&>svg]:size-3.5",
+        lg: "h-7 gap-1.5 px-2.5 text-sm [&>svg]:size-4",
+      },
+      shape: {
+        tag: "",
+        count: "rounded-full px-1.5 leading-none",
       },
     },
+    compoundVariants: [
+      { shape: "count", size: "sm", className: "min-w-5" },
+      { shape: "count", size: "default", className: "min-w-6" },
+      { shape: "count", size: "lg", className: "min-w-7" },
+    ],
     defaultVariants: {
       variant: "default",
+      size: "default",
+      shape: "tag",
     },
   }
 )
@@ -29,6 +55,8 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant = "default",
+  size = "default",
+  shape = "tag",
   render,
   ...props
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
@@ -36,7 +64,7 @@ function Badge({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
-        className: cn(badgeVariants({ variant }), className),
+        className: cn(badgeVariants({ variant, size, shape }), className),
       },
       props
     ),
@@ -48,4 +76,15 @@ function Badge({
   })
 }
 
-export { Badge, badgeVariants }
+function BadgeDot({ className, ...props }: ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="badge-dot"
+      aria-hidden="true"
+      className={cn("size-1.5 shrink-0 rounded-full bg-current", className)}
+      {...props}
+    />
+  )
+}
+
+export { Badge, BadgeDot, badgeVariants }
