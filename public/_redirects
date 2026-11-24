@@ -1,0 +1,15 @@
+# Redirects for hosts that read this file, such as Netlify and Cloudflare Pages. Other hosts need the
+# same rules in their own config. Old paths from the current site, from docs/redesign-plan.md
+# section 6.3. The app also redirects these itself, for hosts without rules.
+/bulk-order       /catering          301
+/social           /links             301
+/combo            /menu/c/combos     302
+/account/wallet   /account/loyalty   301
+/orders           /account/orders    301
+
+# Old category links, /menu?category=combos. Netlify matches the query; hosts that cannot are covered
+# by the menu page, which redirects in the browser.
+/menu  category=:slug  /menu/c/:slug  301
+
+# Every path without a prerendered page loads the app.
+/*  /__spa-fallback.html  200

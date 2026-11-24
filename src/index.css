@@ -30,6 +30,7 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-highlight: var(--highlight);
+  --color-saffron: var(--saffron);
   --shadow-overlay: 0 16px 40px -12px rgb(26 26 26 / 0.22), 0 2px 6px rgb(26 26 26 / 0.06);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -75,6 +76,8 @@
   --success-foreground: #f8f6f1;
   --warning: #8a4b08;
   --warning-foreground: #fff7ea;
+  /* Gold accent for text and marks on the brand green only, such as the hero ring. 6.2:1 on primary. */
+  --saffron: #e3b25b;
   /* Hovered or focused item in menus, lists and select popups. */
   --highlight: color-mix(in oklch, var(--primary) 8%, var(--popover));
   --border: #e9e3d7;
@@ -117,6 +120,7 @@
   --warning: #e0a050;
   --warning-foreground: #241505;
   --highlight: color-mix(in oklch, var(--primary) 30%, var(--popover));
+  --saffron: #e3b25b;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

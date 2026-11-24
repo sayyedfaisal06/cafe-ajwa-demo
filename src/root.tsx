@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -9,7 +8,7 @@ import {
   useRouteError,
 } from 'react-router'
 
-import { Button } from '@/components/ui/button'
+import { ErrorView } from '@/components/site/error-view'
 import { Spinner } from '@/components/ui/spinner'
 import { Toaster } from '@/components/ui/toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -24,6 +23,15 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#0f3d2e" />
+        {/* Link previews for every page. Titles and descriptions come from each route's meta. */}
+        <meta property="og:site_name" content="Cafe Ajwa" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://www.cafeajwa.co/og-image.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Cafe Ajwa: tandoor, curries and Indo Chinese, cooked fresh in Malwani" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://www.cafeajwa.co/og-image.jpg" />
         <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -59,28 +67,12 @@ export function HydrateFallback() {
   )
 }
 
+/* The last resort, for failures in the site layout itself. Page errors show inside the layout via
+   routes/page-boundary.tsx. */
 export function ErrorBoundary() {
-  const error = useRouteError()
-  const notFound = isRouteErrorResponse(error) && error.status === 404
-
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
-      <title>{notFound ? 'Page not found, Cafe Ajwa' : 'Something went wrong, Cafe Ajwa'}</title>
-      <p className="text-sm font-semibold text-primary">{notFound ? '404' : 'Something went wrong'}</p>
-      <h1 className="font-heading text-3xl font-semibold tracking-tight">
-        {notFound ? 'We could not find that page' : 'This page did not load'}
-      </h1>
-      <p className="text-muted-foreground">
-        {notFound
-          ? 'The link may be old or the dish may have moved. Head back to the home page.'
-          : 'Refresh the page or try again in a minute.'}
-      </p>
-      <Button render={<a href="/" />} nativeButton={false}>
-        Go to the home page
-      </Button>
-      {import.meta.env.DEV && error instanceof Error && (
-        <pre className="mt-4 w-full overflow-x-auto rounded-xl bg-secondary p-4 text-left text-xs">{error.stack}</pre>
-      )}
+    <main>
+      <ErrorView error={useRouteError()} fullScreen />
     </main>
   )
 }

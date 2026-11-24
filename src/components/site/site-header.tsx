@@ -1,17 +1,11 @@
 import { cn } from 'cn'
-import {
-  BellIcon,
-  GiftIcon,
-  LogOutIcon,
-  MapPinIcon,
-  PackageIcon,
-  SearchIcon,
-  UserIcon,
-  UsersIcon,
-} from 'lucide-react'
-import { Link, NavLink } from 'react-router'
+import { LogOutIcon, SearchIcon, UserIcon } from 'lucide-react'
+import { useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router'
 
 import logo from '@/assets/logo.png'
+import { accountSections, LogOutDialog } from '@/components/site/account'
+import { useAuth } from '@/components/site/auth'
 import { CartButton } from '@/components/site/cart'
 import { MenuSearch } from '@/components/site/menu-search'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -29,45 +23,57 @@ import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle, SheetTrigger }
 /* Header links from the navigation table in docs/redesign-plan.md, pointing at the current routes. */
 const navLinks = [
   { to: '/menu', label: 'Menu' },
-  { to: '/bulk-order', label: 'Bulk order' },
+  { to: '/catering', label: 'Catering' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ]
 
-const accountLinks = [
-  { to: '/account/orders', label: 'Orders', icon: PackageIcon },
-  { to: '/account/addresses', label: 'Addresses', icon: MapPinIcon },
-  { to: '/account/loyalty', label: 'Loyalty points', icon: GiftIcon },
-  { to: '/account/referrals', label: 'Referrals', icon: UsersIcon },
-  { to: '/account/notifications', label: 'Notifications', icon: BellIcon },
-  { to: '/account/profile', label: 'Profile', icon: UserIcon },
-]
+/* Logged out: a Log in button that returns to this page afterwards. Logged in: the account menu,
+   which phones reach from the tab bar instead. */
+function AccountArea() {
+  const { signedIn } = useAuth()
+  const { pathname, search } = useLocation()
+  if (signedIn) return <AccountMenu className="hidden md:inline-flex" />
+  // The auth pages already show the form, so the button would only point back at them.
+  if (['/login', '/register', '/forgot-password'].includes(pathname)) return null
+  const next = pathname === '/' ? '' : `?next=${encodeURIComponent(pathname + search)}`
+  return (
+    <Button variant="outline" size="sm" render={<Link to={`/login${next}`} />} nativeButton={false} className="mx-1">
+      <UserIcon data-icon="inline-start" />
+      Log in
+    </Button>
+  )
+}
 
 function AccountMenu({ className }: { className?: string }) {
+  const [loggingOut, setLoggingOut] = useState(false)
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Account" className={className} />}>
-        <UserIcon />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>My account</DropdownMenuLabel>
-          {accountLinks.map(({ to, label, icon: Icon }) => (
-            <DropdownMenuItem key={to} render={<Link to={to} />}>
-              <Icon />
-              {label}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Account" className={className} />}>
+          <UserIcon />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>My account</DropdownMenuLabel>
+            {accountSections.map(({ to, label, icon: Icon }) => (
+              <DropdownMenuItem key={to} render={<Link to={to} />}>
+                <Icon />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem variant="destructive" onClick={() => setLoggingOut(true)}>
+              <LogOutIcon />
+              Log out
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem variant="destructive">
-            <LogOutIcon />
-            Log out
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <LogOutDialog open={loggingOut} onOpenChange={setLoggingOut} />
+    </>
   )
 }
 
@@ -105,7 +111,7 @@ export function SiteHeader() {
       </a>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
         <Link to="/" aria-label="Cafe Ajwa home" className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <img src={logo} alt="" className="h-10 w-auto" />
+          <img src={logo} alt="" className="h-14 w-auto" />
         </Link>
 
         <nav aria-label="Main" className="ml-4 hidden items-center gap-1 lg:flex">
@@ -127,9 +133,9 @@ export function SiteHeader() {
             <MenuSearch />
           </div>
           <MobileSearch className="md:hidden" />
-          <AccountMenu className="hidden md:inline-flex" />
+          <AccountArea />
           <CartButton />
-          <Button render={<Link to="/menu" />} nativeButton={false} className="ml-2 hidden lg:inline-flex">
+          <Button size="sm" render={<Link to="/menu" />} nativeButton={false} className="ml-2 hidden lg:inline-flex">
             Order now
           </Button>
         </div>

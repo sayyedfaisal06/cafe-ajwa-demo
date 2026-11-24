@@ -1,0 +1,13 @@
+# Pages that need a log in, checkout and order pages are private to each customer.
+User-agent: *
+Allow: /
+Disallow: /account/
+Disallow: /checkout
+Disallow: /orders/
+Disallow: /auth/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /ui
+
+Sitemap: https://www.cafeajwa.co/sitemap.xml

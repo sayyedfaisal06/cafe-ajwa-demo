@@ -4,6 +4,8 @@
  * Both libraries load only when a receipt is downloaded, which keeps them out of the main bundle.
  */
 
+import { restaurant } from '@/data/restaurant'
+
 export type ReceiptLine = {
   name: string
   quantity: number
@@ -26,13 +28,7 @@ export type Receipt = {
   discount?: { label: string; amount: number }
 }
 
-export const restaurant = {
-  name: 'Cafe Ajwa',
-  branch: 'Malwani',
-  address: 'Gate 8, Gaikwad Nagar Bus Depot, Malwani Colony, Malad West, Mumbai, Maharashtra 400095',
-  phone: '+91 91675 92758',
-  email: 'cafeajwa08@gmail.com',
-}
+export { restaurant }
 
 const round2 = (value: number) => Math.round(value * 100) / 100
 

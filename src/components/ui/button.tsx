@@ -1,4 +1,5 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
@@ -57,13 +58,26 @@ function Button({
   size = "default",
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+  const classes = cn(buttonVariants({ variant, size, className }))
+  // A button that renders a link stays a link. The button primitive would add role="button" and
+  // tabindex, so screen readers would announce a link that navigates as a button.
+  if (props.nativeButton === false) return <ButtonLink {...props} className={classes} />
+  return <ButtonPrimitive data-slot="button" className={classes} {...props} />
+}
+
+function ButtonLink({
+  render,
+  ref,
+  nativeButton: _nativeButton,
+  focusableWhenDisabled: _focusableWhenDisabled,
+  ...props
+}: ButtonPrimitive.Props & { className: string }) {
+  return useRender({
+    render: render as useRender.RenderProp,
+    ref,
+    defaultTagName: "a",
+    props: { "data-slot": "button", ...props },
+  })
 }
 
 export { Button, buttonVariants }

@@ -707,16 +707,7 @@ function UiPreview() {
 
             <div className="md:col-span-2">
               <Panel label="Option cards">
-                <RadioGroup defaultValue="upi" className="grid gap-3 sm:grid-cols-3">
-                  <FieldLabel htmlFor="pay-upi">
-                    <Field orientation="horizontal">
-                      <FieldContent>
-                        <FieldTitle>UPI or card</FieldTitle>
-                        <FieldDescription>Pay online with Razorpay.</FieldDescription>
-                      </FieldContent>
-                      <RadioGroupItem value="upi" id="pay-upi" />
-                    </Field>
-                  </FieldLabel>
+                <RadioGroup defaultValue="cod" className="grid gap-3 sm:grid-cols-2">
                   <FieldLabel htmlFor="pay-cod">
                     <Field orientation="horizontal">
                       <FieldContent>
@@ -1149,8 +1140,8 @@ function UiPreview() {
                   variant="outline"
                   onClick={() =>
                     toast.add({
-                      title: 'Payment failed',
-                      description: 'No money was taken. Try again or pick another method.',
+                      title: 'Order not placed',
+                      description: 'We could not reach the kitchen. Check your connection and try again.',
                       type: 'error',
                     })
                   }

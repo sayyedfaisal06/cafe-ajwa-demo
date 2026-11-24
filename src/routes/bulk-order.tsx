@@ -1,7 +1,7 @@
-export function meta() {
-  return [{ title: 'Bulk order, Cafe Ajwa' }]
-}
+import { Navigate } from 'react-router'
 
-export default function BulkOrderPage() {
-  return null
+/* The old bulk order page is now Catering, as docs/redesign-plan.md section 6.3 asks. The host's
+   redirect rules send a 301 before this loads; this covers hosts without them. */
+export default function BulkOrderRedirect() {
+  return <Navigate to="/catering" replace />
 }

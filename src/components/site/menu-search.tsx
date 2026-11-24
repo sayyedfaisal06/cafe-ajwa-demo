@@ -37,7 +37,7 @@ function editDistance(a: string, b: string) {
  * Every word of the query must start a word in the label. Words of 4 letters or more may be one
  * letter off, so "biriyani" finds Biryani and "panner" finds Paneer.
  */
-function fuzzyMatch(label: string, query: string) {
+export function fuzzyMatch(label: string, query: string) {
   const words = label.toLowerCase().split(/\s+/)
   return query
     .toLowerCase()

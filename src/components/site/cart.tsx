@@ -1,6 +1,6 @@
 import { ArrowRightIcon, PlusIcon, ShoppingBagIcon } from 'lucide-react'
-import { createContext, use, useState, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { createContext, use, useCallback, useState, type ReactNode } from 'react'
+import { Link, useMatch } from 'react-router'
 
 import { DishThumb, FoodMark } from '@/components/food'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import type { Dish } from '@/data/menu'
 import { formatPrice } from '@/lib/format'
 
 export type CartLine = {
@@ -46,11 +47,28 @@ type CartContextValue = {
   count: number
   itemTotal: number
   setQuantity: (id: string, quantity: number) => void
+  addDish: (dish: Dish, choice?: { variant?: string; price?: number; quantity?: number }) => void
+  /** Swaps the whole cart for these dishes, as reordering a past order does. */
+  replaceWith: (items: { dish: Dish; variant?: string; price?: number; quantity: number }[]) => void
+  clear: () => void
+  quantityOf: (id: string) => number
   open: boolean
   setOpen: (open: boolean) => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
+
+/* A dish with a size choice becomes its own cart line, such as Chicken Pakoda, 1 kg. */
+function lineFor(dish: Dish, choice: { variant?: string; price?: number; quantity?: number }): CartLine {
+  return {
+    id: choice.variant ? `${dish.id}:${choice.variant}` : dish.id,
+    name: dish.name,
+    veg: dish.veg,
+    price: choice.price ?? dish.price,
+    quantity: choice.quantity ?? 1,
+    options: choice.variant ?? dish.label ?? 'Regular',
+  }
+}
 
 /* Holds the cart and whether the cart sheet is open, for the header, the phone cart bar and the sheet. */
 export function CartProvider({ children, initialLines = sampleCart }: { children: ReactNode; initialLines?: CartLine[] }) {
@@ -62,15 +80,39 @@ export function CartProvider({ children, initialLines = sampleCart }: { children
         ? current.filter((line) => line.id !== id)
         : current.map((line) => (line.id === id ? { ...line, quantity } : line)),
     )
+  const addDish = (dish: Dish, choice: { variant?: string; price?: number; quantity?: number } = {}) => {
+    const added = lineFor(dish, choice)
+    setLines((current) =>
+      current.some((line) => line.id === added.id)
+        ? current.map((line) => (line.id === added.id ? { ...line, quantity: line.quantity + added.quantity } : line))
+        : [...current, added],
+    )
+  }
+  // Stable, so an effect that reorders runs once.
+  const replaceWith = useCallback(
+    (items: { dish: Dish; variant?: string; price?: number; quantity: number }[]) =>
+      setLines(items.map(({ dish, ...choice }) => lineFor(dish, choice))),
+    [],
+  )
+
   const value: CartContextValue = {
     lines,
     count: lines.reduce((sum, line) => sum + line.quantity, 0),
     itemTotal: lines.reduce((sum, line) => sum + line.price * line.quantity, 0),
     setQuantity,
+    addDish,
+    replaceWith,
+    clear: () => setLines([]),
+    quantityOf: (id) => lines.find((line) => line.id === id)?.quantity ?? 0,
     open,
     setOpen,
   }
   return <CartContext value={value}>{children}</CartContext>
+}
+
+/* The cart when inside CartProvider, otherwise null. */
+export function useOptionalCart() {
+  return use(CartContext)
 }
 
 export function useCart() {
@@ -113,7 +155,10 @@ export function CartButton({ labelled = false, className }: { labelled?: boolean
 /* The phone bar above the tab bar while the cart has items, as the redesign plan describes. */
 export function CartBar() {
   const { count, itemTotal, setOpen } = useCart()
-  if (count === 0) return null
+  const onDishPage = useMatch('/menu/:slug') !== null
+  // Checkout has its own Place order bar.
+  const onCheckout = useMatch('/checkout') !== null
+  if (count === 0 || onDishPage || onCheckout) return null
   return (
     <div className="fixed inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 md:hidden">
       <Button

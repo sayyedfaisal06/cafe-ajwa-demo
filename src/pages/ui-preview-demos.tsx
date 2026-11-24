@@ -6,16 +6,13 @@ import {
   BikeIcon,
   BriefcaseIcon,
   CheckIcon,
-  ChefHatIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  ChevronUpIcon,
   CircleCheckIcon,
   CopyIcon,
   DrumstickIcon,
   FlameIcon,
   GiftIcon,
-  HeartIcon,
   HomeIcon,
   LeafIcon,
   LocateFixedIcon,
@@ -24,13 +21,11 @@ import {
   PartyPopperIcon,
   PercentIcon,
   PhoneIcon,
-  PlusIcon,
   ReceiptIcon,
   RotateCcwIcon,
   Share2Icon,
   TicketPercentIcon,
   TimerIcon,
-  UsersIcon,
   UtensilsCrossedIcon,
   UtensilsIcon,
   type LucideIcon,
@@ -42,6 +37,9 @@ import { useState, type ReactNode } from 'react'
 import { FoodMark } from '@/components/food'
 import { ReceiptDialog } from '@/components/receipt-dialog'
 import { CartButton, CartProvider, CartSheet } from '@/components/site/cart'
+import { CateringBanner, PromoBanner } from '@/components/site/banners'
+import { CategoryGrid, CategoryTile } from '@/components/site/category'
+import { DishCard, DishCardSkeleton, DishRow } from '@/components/site/dish'
 import { MenuSearch } from '@/components/site/menu-search'
 import { Badge, BadgeDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -78,7 +76,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -91,10 +88,9 @@ import {
   InputGroupText,
 } from '@/components/ui/input-group'
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp'
-import { QuantityStepper } from '@/components/ui/quantity-stepper'
 import { Toggle, toggleVariants } from '@/components/ui/toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { menuCategories, searchDishes, type MenuCategory } from '@/data/menu'
+import { menuCategories, searchDishes, type Dish } from '@/data/menu'
 import { formatPrice } from '@/lib/format'
 import { receiptTotals, type Receipt } from '@/lib/receipt'
 
@@ -107,20 +103,10 @@ function CartSheetDemo() {
   )
 }
 
-type Dish = {
-  name: string
-  description: string
-  price: number
-  veg: boolean
-  serves?: string
-  spice?: 'Mild' | 'Medium' | 'Hot'
-  bestseller?: boolean
-  customisable?: boolean
-  soldOut?: boolean
-}
-
 const cardDishes: Dish[] = [
   {
+    id: 'kolhapuri',
+    slug: 'kolhapuri',
     name: 'Chicken Kolhapuri',
     description: 'Fiery Maharashtrian curry with coconut and dry red chillies, slow cooked on the bone.',
     price: 240,
@@ -131,6 +117,8 @@ const cardDishes: Dish[] = [
     customisable: true,
   },
   {
+    id: 'paneer-butter-garlic',
+    slug: 'paneer-butter-garlic',
     name: 'Paneer Butter Garlic',
     description: 'Paneer cubes tossed in butter, garlic and herbs.',
     price: 320,
@@ -139,6 +127,8 @@ const cardDishes: Dish[] = [
     spice: 'Mild',
   },
   {
+    id: 'chicken-kung-pao',
+    slug: 'chicken-kung-pao',
     name: 'Chicken Kung Pao',
     description: 'Chicken with peanuts, dried chillies and a sweet soy glaze.',
     price: 290,
@@ -148,171 +138,6 @@ const cardDishes: Dish[] = [
     soldOut: true,
   },
 ]
-
-function DishMeta({ dish }: { dish: Dish }) {
-  return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground [&_svg]:size-3.5">
-      {dish.serves && (
-        <span className="flex items-center gap-1.5">
-          <UsersIcon aria-hidden="true" />
-          {dish.serves}
-        </span>
-      )}
-      {dish.spice && (
-        <span className="flex items-center gap-1.5">
-          <FlameIcon aria-hidden="true" />
-          {dish.spice}
-        </span>
-      )}
-    </div>
-  )
-}
-
-/* Add turns into a quantity stepper after the first tap, so the cart does not need opening. */
-function AddControl({ dish, size = 'default' }: { dish: Dish; size?: 'default' | 'sm' }) {
-  const [quantity, setQuantity] = useState(0)
-  if (dish.soldOut) {
-    return (
-      <Button disabled size={size === 'sm' ? 'sm' : 'default'} className="bg-card">
-        Sold out
-      </Button>
-    )
-  }
-  if (quantity === 0) {
-    return (
-      <Button
-        variant="outline"
-        size={size === 'sm' ? 'sm' : 'default'}
-        onClick={() => setQuantity(1)}
-        aria-label={`Add ${dish.name}`}
-        className="min-w-24 bg-card shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
-      >
-        <PlusIcon data-icon="inline-start" />
-        Add
-      </Button>
-    )
-  }
-  return (
-    <QuantityStepper
-      size={size}
-      value={quantity}
-      itemName={dish.name}
-      onValueChange={setQuantity}
-      className="shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
-    />
-  )
-}
-
-function DishCard({ dish }: { dish: Dish }) {
-  const [saved, setSaved] = useState(false)
-  return (
-    <Card data-sold-out={dish.soldOut || undefined} className="group/dish">
-      <CardMedia>
-        <div className="flex size-full items-center justify-center group-data-sold-out/dish:grayscale">
-          <UtensilsCrossedIcon aria-hidden="true" className="size-10 text-muted-foreground/40" />
-        </div>
-        {dish.bestseller && (
-          <Badge className="absolute top-3 left-3">
-            <AwardIcon />
-            Bestseller
-          </Badge>
-        )}
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label={saved ? `Remove ${dish.name} from favourites` : `Save ${dish.name} to favourites`}
-          aria-pressed={saved}
-          onClick={() => setSaved((value) => !value)}
-          className="absolute top-3 right-3 bg-card/90 hover:bg-card"
-        >
-          <HeartIcon className={saved ? 'fill-current' : undefined} />
-        </Button>
-        {dish.soldOut && (
-          <div className="absolute inset-0 flex items-end bg-background/50 p-3">
-            <Badge variant="secondary" size="lg">
-              Sold out today
-            </Badge>
-          </div>
-        )}
-      </CardMedia>
-      <CardHeader>
-        <CardTitle className="flex items-start gap-2 group-data-sold-out/dish:text-muted-foreground">
-          <span className="mt-1">
-            <FoodMark veg={dish.veg} />
-          </span>
-          {dish.name}
-        </CardTitle>
-        <CardDescription className="line-clamp-2">{dish.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DishMeta dish={dish} />
-      </CardContent>
-      <CardFooter className="mt-auto justify-between">
-        <div className="flex flex-col">
-          <span className="text-lg font-semibold tabular-nums group-data-sold-out/dish:text-muted-foreground">
-            {formatPrice(dish.price)}
-          </span>
-          {dish.customisable && <span className="text-xs text-muted-foreground">Customisable</span>}
-        </div>
-        <AddControl dish={dish} />
-      </CardFooter>
-    </Card>
-  )
-}
-
-function DishCardSkeleton() {
-  return (
-    <Card aria-hidden="true">
-      <CardMedia>
-        <Skeleton className="size-full rounded-none" />
-      </CardMedia>
-      <CardHeader>
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-      </CardHeader>
-      <CardFooter className="mt-auto justify-between">
-        <Skeleton className="h-6 w-14" />
-        <Skeleton className="h-11 w-24 rounded-full" />
-      </CardFooter>
-    </Card>
-  )
-}
-
-/* The compact row for phones: text on the left, photo on the right with Add over its edge. */
-function DishRow({ dish }: { dish: Dish }) {
-  return (
-    <div data-sold-out={dish.soldOut || undefined} className="group/dish flex gap-4 py-5">
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <FoodMark veg={dish.veg} />
-          {dish.bestseller && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-warning">
-              <AwardIcon aria-hidden="true" className="size-3.5" />
-              Bestseller
-            </span>
-          )}
-        </div>
-        <h4 className="text-base leading-snug font-semibold group-data-sold-out/dish:text-muted-foreground">
-          {dish.name}
-        </h4>
-        <span className="font-semibold tabular-nums">{formatPrice(dish.price)}</span>
-        <p className="line-clamp-2 text-sm text-muted-foreground">{dish.description}</p>
-        <DishMeta dish={dish} />
-      </div>
-      <div className="flex w-32 shrink-0 flex-col items-center">
-        <div className="flex size-32 items-center justify-center rounded-2xl bg-secondary group-data-sold-out/dish:grayscale">
-          <UtensilsCrossedIcon aria-hidden="true" className="size-8 text-muted-foreground/40" />
-        </div>
-        <div className="-mt-6">
-          <AddControl dish={dish} />
-        </div>
-        {dish.customisable && (
-          <span className="mt-1.5 text-[0.6875rem] text-muted-foreground">Customisable</span>
-        )}
-      </div>
-    </div>
-  )
-}
 
 function OfferCard() {
   const [copied, setCopied] = useState(false)
@@ -591,118 +416,6 @@ function HeroBanner({ tone = 'brand' }: { tone?: 'brand' | 'cream' }) {
   )
 }
 
-/* A wide banner with a photo on one side, for sections such as catering or a festival. */
-function PromoBanner({
-  eyebrow,
-  title,
-  description,
-  action,
-  tone = 'card',
-  icon: Icon,
-  reverse = false,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-  action: ReactNode
-  tone?: 'card' | 'turmeric'
-  icon: LucideIcon
-  reverse?: boolean
-}) {
-  return (
-    <section
-      aria-label={title}
-      data-tone={tone}
-      className={cn(
-        'grid overflow-hidden rounded-3xl border sm:grid-cols-[2fr_3fr]',
-        'data-[tone=card]:bg-card',
-        'data-[tone=turmeric]:border-warning/25 data-[tone=turmeric]:bg-[color-mix(in_oklch,var(--warning)_9%,var(--card))]',
-        reverse && 'sm:grid-cols-[3fr_2fr]'
-      )}
-    >
-      <div
-        className={cn(
-          'flex aspect-[16/9] items-center justify-center bg-secondary sm:aspect-auto sm:min-h-56',
-          'in-data-[tone=turmeric]:bg-[color-mix(in_oklch,var(--warning)_15%,var(--card))]',
-          reverse && 'sm:order-last'
-        )}
-      >
-        <Icon aria-hidden="true" strokeWidth={1.25} className="size-14 text-primary/40 in-data-[tone=turmeric]:text-warning/50" />
-      </div>
-      <div className="flex flex-col items-start justify-center gap-3 p-6 sm:p-8">
-        <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase in-data-[tone=turmeric]:text-warning">
-          {eyebrow}
-        </span>
-        <h3 className="font-heading text-2xl leading-tight font-semibold tracking-tight text-balance">{title}</h3>
-        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{description}</p>
-        <div className="mt-2">{action}</div>
-      </div>
-    </section>
-  )
-}
-
-const carouselBanners: { title: string; description: string; link: string; icon: LucideIcon; tone: 'leaf' | 'turmeric' | 'cream' }[] = [
-  { title: `Combos from ${formatPrice(399)}`, description: 'Biryani, noodles, butter chicken or fried rice, packed for one.', link: 'See combos', icon: UtensilsIcon, tone: 'leaf' },
-  { title: '10% off weekday lunch', description: 'Monday to Friday, 12 pm to 4 pm. Use LUNCH10.', link: 'View offer', icon: PercentIcon, tone: 'turmeric' },
-  { title: 'Order on WhatsApp', description: 'Send your order and we will confirm it with a total.', link: 'Open WhatsApp', icon: PhoneIcon, tone: 'cream' },
-  { title: 'Refer a friend', description: 'You both earn points after their first delivered order.', link: 'Get your code', icon: PartyPopperIcon, tone: 'leaf' },
-]
-
-/* Promo banners in a row that snaps one banner at a time, with the same arrows as the category bar. */
-function BannerCarousel() {
-  return (
-    <ScrollRow scrollLabel="offers" viewportClassName="scroll-px-1 snap-x snap-mandatory gap-4">
-      {carouselBanners.map((banner) => {
-        const Icon = banner.icon
-        return (
-          <a
-            key={banner.title}
-            href="#"
-            data-tone={banner.tone}
-            className={cn(
-              'group/banner flex w-[85%] shrink-0 snap-start items-center gap-4 rounded-3xl p-5 outline-none sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]',
-              'transition-colors duration-150 motion-reduce:transition-none',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-              'data-[tone=leaf]:bg-highlight data-[tone=leaf]:hover:bg-[color-mix(in_oklch,var(--primary)_13%,var(--popover))]',
-              'data-[tone=turmeric]:bg-[color-mix(in_oklch,var(--warning)_10%,var(--card))] data-[tone=turmeric]:hover:bg-[color-mix(in_oklch,var(--warning)_15%,var(--card))]',
-              'data-[tone=cream]:bg-secondary data-[tone=cream]:hover:bg-accent'
-            )}
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="text-lg leading-snug font-semibold tracking-tight">{banner.title}</span>
-              <span className="line-clamp-2 text-sm text-muted-foreground">{banner.description}</span>
-              <span className="mt-1 flex items-center gap-1 text-sm font-semibold text-primary">
-                {banner.link}
-                <ArrowRightIcon aria-hidden="true" className="size-4 transition-transform group-hover/banner:translate-x-0.5 motion-reduce:transition-none" />
-              </span>
-            </div>
-            <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-card">
-              <Icon aria-hidden="true" strokeWidth={1.5} className="size-8 text-primary/60 in-data-[tone=turmeric]:text-warning/70" />
-            </span>
-          </a>
-        )
-      })}
-    </ScrollRow>
-  )
-}
-
-function CateringBanner() {
-  return (
-    <PromoBanner
-      eyebrow="Catering and bulk orders"
-      title="Feeding a group?"
-      description="Office lunches, parties and family events. Tell us the date and head count and we will plan the menu with you."
-      icon={ChefHatIcon}
-      action={
-        <Button variant="secondary">
-          Plan a catering order
-          <ArrowRightIcon data-icon="inline-end" />
-        </Button>
-      }
-    />
-  )
-}
-
 function FestiveBanner() {
   return (
     <PromoBanner
@@ -960,7 +673,7 @@ const sampleReceipt: Receipt = {
   orderNumber: '1038',
   placedAt: new Date(2026, 10, 20, 20, 15),
   orderType: 'Delivery',
-  payment: 'UPI, paid online',
+  payment: 'Cash on delivery',
   customer: { name: 'Riya Shaikh', phone: '+91 98765 43210', address: 'Flat 302, Sea View Apartments, Malwani Colony, Malad West, Mumbai 400095' },
   lines: [
     { name: 'Chicken Kolhapuri', quantity: 1, price: 240, options: 'Full, with Tandoori Roti' },
@@ -1033,88 +746,6 @@ function CategoryCard({ name, count }: { name: string; count: number }) {
       </div>
       <ChevronRightIcon aria-hidden="true" className="size-5 text-muted-foreground transition-transform group-hover/card:translate-x-0.5 motion-reduce:transition-none" />
     </Card>
-  )
-}
-
-/*
- * A square photo tile with the name below. The whole tile is one link. Until category photos
- * exist, a food icon stands in so the grid does not look the same everywhere.
- */
-function CategoryTile({ category, src }: { category: MenuCategory; src?: string }) {
-  const Icon = category.icon
-  return (
-    <Card interactive size="sm" className="gap-3 pb-4">
-      <CardMedia className="aspect-square">
-        {src ? (
-          <img src={src} alt="" loading="lazy" />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <Icon aria-hidden="true" strokeWidth={1.5} className="size-10 text-primary/45" />
-          </div>
-        )}
-      </CardMedia>
-      <div className="flex flex-col gap-0.5 px-4">
-        <a href="#" className="line-clamp-2 text-sm leading-snug font-semibold outline-none after:absolute after:inset-0">
-          {category.name}
-        </a>
-        {category.count !== undefined && (
-          <span className="text-xs text-muted-foreground">{category.count} dishes</span>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-/*
- * Shows the first few categories and an Explore more tile in the same card style. The tile opens
- * the rest in place; Show fewer folds them away again. On the live home page the tile can link to
- * the menu instead.
- */
-function CategoryGrid({ categories, initial = 5 }: { categories: MenuCategory[]; initial?: number }) {
-  const [expanded, setExpanded] = useState(false)
-  const hidden = categories.length - initial
-  const shown = expanded ? categories : categories.slice(0, initial)
-
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div id="category-grid" className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {shown.map((category) => (
-          <CategoryTile key={category.name} category={category} />
-        ))}
-        {!expanded && hidden > 0 && (
-          <Card interactive size="sm" className="gap-3 pb-4">
-            <CardMedia className="flex aspect-square items-center justify-center bg-highlight">
-              <span className="flex size-14 items-center justify-center rounded-full bg-card text-primary shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-transform duration-150 group-hover/card:translate-x-0.5 motion-reduce:transition-none">
-                <ArrowRightIcon aria-hidden="true" className="size-6" />
-              </span>
-            </CardMedia>
-            <div className="flex flex-col gap-0.5 px-4">
-              <button
-                type="button"
-                aria-expanded={false}
-                aria-controls="category-grid"
-                onClick={() => setExpanded(true)}
-                className="text-left text-sm leading-snug font-semibold text-primary outline-none after:absolute after:inset-0"
-              >
-                Explore more
-              </button>
-              <span className="text-xs text-muted-foreground">{hidden} more categories</span>
-            </div>
-          </Card>
-        )}
-      </div>
-      {expanded && (
-        <Button
-          variant="outline"
-          aria-expanded
-          aria-controls="category-grid"
-          onClick={() => setExpanded(false)}
-        >
-          Show fewer
-          <ChevronUpIcon data-icon="inline-end" />
-        </Button>
-      )}
-    </div>
   )
 }
 
@@ -1356,6 +987,51 @@ function FilterBarDemo() {
           </Button>
         )}
       </div>
+    </ScrollRow>
+  )
+}
+
+const carouselBanners: { title: string; description: string; link: string; icon: LucideIcon; tone: 'leaf' | 'turmeric' | 'cream' }[] = [
+  { title: `Combos from ${formatPrice(399)}`, description: 'Biryani, noodles, butter chicken or fried rice, packed for one.', link: 'See combos', icon: UtensilsIcon, tone: 'leaf' },
+  { title: '10% off weekday lunch', description: 'Monday to Friday, 12 pm to 4 pm. Use LUNCH10.', link: 'View offer', icon: PercentIcon, tone: 'turmeric' },
+  { title: 'Order on WhatsApp', description: 'Send your order and we will confirm it with a total.', link: 'Open WhatsApp', icon: PhoneIcon, tone: 'cream' },
+  { title: 'Refer a friend', description: 'You both earn points after their first delivered order.', link: 'Get your code', icon: PartyPopperIcon, tone: 'leaf' },
+]
+
+/* Promo banners in a row that snaps one banner at a time, with the same arrows as the category bar. */
+function BannerCarousel() {
+  return (
+    <ScrollRow scrollLabel="offers" viewportClassName="scroll-px-1 snap-x snap-mandatory gap-4">
+      {carouselBanners.map((banner) => {
+        const Icon = banner.icon
+        return (
+          <a
+            key={banner.title}
+            href="#"
+            data-tone={banner.tone}
+            className={cn(
+              'group/banner flex w-[85%] shrink-0 snap-start items-center gap-4 rounded-3xl p-5 outline-none sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]',
+              'transition-colors duration-150 motion-reduce:transition-none',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'data-[tone=leaf]:bg-highlight data-[tone=leaf]:hover:bg-[color-mix(in_oklch,var(--primary)_13%,var(--popover))]',
+              'data-[tone=turmeric]:bg-[color-mix(in_oklch,var(--warning)_10%,var(--card))] data-[tone=turmeric]:hover:bg-[color-mix(in_oklch,var(--warning)_15%,var(--card))]',
+              'data-[tone=cream]:bg-secondary data-[tone=cream]:hover:bg-accent'
+            )}
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <span className="text-lg leading-snug font-semibold tracking-tight">{banner.title}</span>
+              <span className="line-clamp-2 text-sm text-muted-foreground">{banner.description}</span>
+              <span className="mt-1 flex items-center gap-1 text-sm font-semibold text-primary">
+                {banner.link}
+                <ArrowRightIcon aria-hidden="true" className="size-4 transition-transform group-hover/banner:translate-x-0.5 motion-reduce:transition-none" />
+              </span>
+            </div>
+            <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-card">
+              <Icon aria-hidden="true" strokeWidth={1.5} className="size-8 text-primary/60 in-data-[tone=turmeric]:text-warning/70" />
+            </span>
+          </a>
+        )
+      })}
     </ScrollRow>
   )
 }
