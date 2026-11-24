@@ -143,7 +143,7 @@ import {
   cardDishes,
   coupons,
   menuCategories,
-} from '@/pages/home-demos'
+} from '@/pages/ui-preview-demos'
 
 const categories = [
   'Combos',
@@ -218,7 +218,15 @@ function formatPrice(value: number) {
   return `₹${value.toLocaleString('en-IN')}`
 }
 
-function Home() {
+export function meta() {
+  return [
+    { title: 'UI elements, Cafe Ajwa' },
+    { name: 'robots', content: 'noindex' },
+    { name: 'description', content: 'The Cafe Ajwa design system: colours, type and every UI element with real menu content.' },
+  ]
+}
+
+function UiPreview() {
   return (
     <div className="min-h-svh">
       <header className="border-b">
@@ -1342,4 +1350,4 @@ function Home() {
   )
 }
 
-export default Home
+export default UiPreview

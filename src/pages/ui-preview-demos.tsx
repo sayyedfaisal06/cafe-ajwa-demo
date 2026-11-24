@@ -11,16 +11,12 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   CircleCheckIcon,
-  CookingPotIcon,
   CopyIcon,
   DrumstickIcon,
-  EggFriedIcon,
   FlameIcon,
   GiftIcon,
   HeartIcon,
-  HistoryIcon,
   HomeIcon,
-  LayoutGridIcon,
   LeafIcon,
   LocateFixedIcon,
   LockIcon,
@@ -31,23 +27,22 @@ import {
   PlusIcon,
   ReceiptIcon,
   RotateCcwIcon,
-  SaladIcon,
   Share2Icon,
-  ShoppingBagIcon,
-  SoupIcon,
   TicketPercentIcon,
   TimerIcon,
   UsersIcon,
   UtensilsCrossedIcon,
   UtensilsIcon,
-  WheatIcon,
   type LucideIcon,
   XIcon,
 } from 'lucide-react'
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { useState, type ReactNode } from 'react'
 
+import { FoodMark } from '@/components/food'
 import { ReceiptDialog } from '@/components/receipt-dialog'
+import { CartButton, CartProvider, CartSheet } from '@/components/site/cart'
+import { MenuSearch } from '@/components/site/menu-search'
 import { Badge, BadgeDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -72,29 +67,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { ScrollRow } from '@/components/ui/scroll-row'
-import {
-  Search,
-  SearchCollection,
-  SearchContent,
-  SearchEmpty,
-  SearchGroup,
-  SearchGroupLabel,
-  SearchHighlight,
-  SearchInput,
-  SearchItem,
-  SearchList,
-  type SearchGroupItems,
-} from '@/components/ui/search'
 import { Separator } from '@/components/ui/separator'
 import {
   Select,
@@ -118,187 +92,18 @@ import {
 } from '@/components/ui/input-group'
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp'
 import { QuantityStepper } from '@/components/ui/quantity-stepper'
-import {
-  Sheet,
-  SheetBody,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
 import { Toggle, toggleVariants } from '@/components/ui/toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { menuCategories, searchDishes, type MenuCategory } from '@/data/menu'
+import { formatPrice } from '@/lib/format'
 import { receiptTotals, type Receipt } from '@/lib/receipt'
 
-function formatPrice(value: number) {
-  return `₹${value.toLocaleString('en-IN')}`
-}
-
-/* The Indian food mark: a square with a circle for veg and a triangle for non veg. */
-function FoodMark({ veg }: { veg: boolean }) {
-  return (
-    <span
-      className={
-        veg
-          ? 'flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border-[1.5px] border-success'
-          : 'flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border-[1.5px] border-destructive'
-      }
-    >
-      {veg ? (
-        <span className="size-1.5 rounded-full bg-success" />
-      ) : (
-        <span className="size-1.5 bg-destructive [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
-      )}
-      <span className="sr-only">{veg ? 'Veg' : 'Non veg'}</span>
-    </span>
-  )
-}
-
-/* Square image slot. Shows a plate icon until the dish has a photo. */
-function DishThumb({ src, alt }: { src?: string; alt: string }) {
-  return (
-    <div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
-      {src ? (
-        <img src={src} alt={alt} className="size-full object-cover" loading="lazy" />
-      ) : (
-        <UtensilsCrossedIcon aria-hidden="true" className="size-6 text-muted-foreground/60" />
-      )}
-    </div>
-  )
-}
-
-type CartLine = {
-  id: string
-  name: string
-  veg: boolean
-  price: number
-  quantity: number
-  options: string
-}
-
-const initialCart: CartLine[] = [
-  { id: 'kolhapuri', name: 'Chicken Kolhapuri', veg: false, price: 240, quantity: 1, options: 'Full, with Tandoori Roti' },
-  { id: 'paneer-bg', name: 'Paneer Butter Garlic', veg: true, price: 320, quantity: 2, options: 'Full' },
-  { id: 'jeera', name: 'Jeera Rice', veg: true, price: 110, quantity: 1, options: 'Half' },
-]
-
 function CartSheetDemo() {
-  const [lines, setLines] = useState(initialCart)
-  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0)
-  const itemTotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0)
-
-  const setQuantity = (id: string, quantity: number) =>
-    setLines((current) =>
-      quantity === 0
-        ? current.filter((line) => line.id !== id)
-        : current.map((line) => (line.id === id ? { ...line, quantity } : line)),
-    )
-
   return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>
-        <ShoppingBagIcon data-icon="inline-start" />
-        Cart
-        {itemCount > 0 && (
-          <Badge shape="count" size="sm">
-            {itemCount}
-          </Badge>
-        )}
-      </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Your cart</SheetTitle>
-          <SheetDescription>
-            {itemCount === 0 ? 'Nothing added yet' : `${itemCount} items, delivery to Malwani`}
-          </SheetDescription>
-        </SheetHeader>
-
-        {lines.length === 0 ? (
-          <SheetBody className="flex items-center">
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <ShoppingBagIcon />
-                </EmptyMedia>
-                <EmptyTitle>Your cart is empty</EmptyTitle>
-                <EmptyDescription>Add dishes from the menu to start an order.</EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button onClick={() => setLines(initialCart)}>Browse menu</Button>
-              </EmptyContent>
-            </Empty>
-          </SheetBody>
-        ) : (
-          <>
-            <SheetBody className="flex flex-col gap-4 py-2">
-              <ul className="flex flex-col divide-y">
-                {lines.map((line) => (
-                  <li key={line.id} className="flex gap-3 py-4">
-                    <DishThumb alt={line.name} />
-                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 flex-col gap-0.5">
-                          <p className="flex items-center gap-2 font-semibold">
-                            <FoodMark veg={line.veg} />
-                            <span className="truncate">{line.name}</span>
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">{line.options}</p>
-                        </div>
-                        <span className="font-semibold tabular-nums">
-                          {formatPrice(line.price * line.quantity)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {line.quantity > 1 ? `${formatPrice(line.price)} each` : ''}
-                        </span>
-                        <QuantityStepper
-                          size="sm"
-                          value={line.quantity}
-                          itemName={line.name}
-                          onValueChange={(quantity) => setQuantity(line.id, quantity)}
-                        />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-
-              <SheetClose render={<Button variant="ghost" size="sm" className="self-start" />}>
-                <PlusIcon data-icon="inline-start" />
-                Add more items
-              </SheetClose>
-
-              <dl className="flex flex-col gap-2 rounded-xl bg-secondary p-4 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Item total</dt>
-                  <dd className="tabular-nums">{formatPrice(itemTotal)}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Delivery fee</dt>
-                  <dd>Shown at checkout</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Taxes</dt>
-                  <dd>Shown at checkout</dd>
-                </div>
-              </dl>
-            </SheetBody>
-            <SheetFooter>
-              <Button size="lg">
-                Checkout
-                <span className="border-l border-primary-foreground/30 pl-3 tabular-nums">
-                  {formatPrice(itemTotal)}
-                </span>
-              </Button>
-            </SheetFooter>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+    <CartProvider>
+      <CartButton labelled />
+      <CartSheet />
+    </CartProvider>
   )
 }
 
@@ -1231,24 +1036,6 @@ function CategoryCard({ name, count }: { name: string; count: number }) {
   )
 }
 
-type MenuCategory = { name: string; count?: number; icon: LucideIcon }
-
-/* The 12 categories from the redesign plan. Counts are left out where the plan does not give one. */
-const menuCategories: MenuCategory[] = [
-  { name: 'Combos', count: 4, icon: UtensilsIcon },
-  { name: 'Tandoor and Kebabs', count: 7, icon: FlameIcon },
-  { name: 'Chicken Starters', count: 4, icon: DrumstickIcon },
-  { name: 'Indo Chinese Starters', count: 4, icon: ChefHatIcon },
-  { name: 'Chicken Curries', count: 15, icon: CookingPotIcon },
-  { name: 'Indo Chinese Mains', count: 5, icon: UtensilsCrossedIcon },
-  { name: 'Paneer and Veg', icon: SaladIcon },
-  { name: 'Biryani and Pulao', count: 4, icon: CookingPotIcon },
-  { name: 'Fried Rice and Noodles', icon: EggFriedIcon },
-  { name: 'Rice and Dal', count: 4, icon: SoupIcon },
-  { name: 'Breads', count: 3, icon: WheatIcon },
-  { name: 'Soups', count: 2, icon: SoupIcon },
-]
-
 /*
  * A square photo tile with the name below. The whole tile is one link. Until category photos
  * exist, a food icon stands in so the grid does not look the same everywhere.
@@ -1331,185 +1118,7 @@ function CategoryGrid({ categories, initial = 5 }: { categories: MenuCategory[];
   )
 }
 
-type Suggestion = {
-  id: string
-  label: string
-  kind: 'recent' | 'dish' | 'category'
-  price?: number
-  veg?: boolean
-  category?: string
-}
-
-/* Real dishes and prices from the current site audit. Prices are left out where the audit has none. */
-const searchDishes: Suggestion[] = [
-  ['Chicken Kolhapuri', 240, false, 'Chicken Curries'],
-  ['Chicken Lucknowi', 240, false, 'Chicken Curries'],
-  ['Chicken Akbari', 250, false, 'Chicken Curries'],
-  ['Chicken Banjara Tawa', 280, false, 'Chicken Curries'],
-  ['Chicken Afghani', 220, false, 'Chicken Curries'],
-  ['Chicken Kung Pao', 290, false, 'Indo Chinese Mains'],
-  ['Chicken 65 Gravy', 230, false, 'Indo Chinese Mains'],
-  ['Paneer 65 Gravy', 260, true, 'Indo Chinese Mains'],
-  ['Paneer Chilli Gravy', 260, true, 'Indo Chinese Mains'],
-  ['Paneer Butter Garlic', 320, true, 'Paneer and Veg'],
-  ['Paneer Angara', 270, true, 'Paneer and Veg'],
-  ['Paneer Tawa', 270, true, 'Paneer and Veg'],
-  ['Chana Masala', 110, true, 'Paneer and Veg'],
-  ['Aloo Mutter', 110, true, 'Paneer and Veg'],
-  ['Veg Biryani', undefined, true, 'Biryani and Pulao'],
-  ['Paneer Biryani', undefined, true, 'Biryani and Pulao'],
-  ['Chicken Pulao', undefined, false, 'Biryani and Pulao'],
-].map(([label, price, veg, category]) => ({
-  id: `dish-${label}`,
-  label: label as string,
-  kind: 'dish' as const,
-  price: price as number | undefined,
-  veg: veg as boolean,
-  category: category as string,
-}))
-
-const searchCategories: Suggestion[] = menuCategories.map((category) => ({
-  id: `category-${category.name}`,
-  label: category.name,
-  kind: 'category' as const,
-}))
-
-const recentSearches: Suggestion[] = ['Chicken Kolhapuri', 'paneer'].map((label) => ({
-  id: `recent-${label}`,
-  label,
-  kind: 'recent' as const,
-}))
-
-const popularDishes = searchDishes.filter((dish) =>
-  ['Chicken Kolhapuri', 'Paneer Butter Garlic', 'Chicken Kung Pao', 'Veg Biryani'].includes(dish.label),
-)
-
-function editDistance(a: string, b: string) {
-  const row = Array.from({ length: b.length + 1 }, (_, index) => index)
-  for (let i = 1; i <= a.length; i++) {
-    let previous = row[0]
-    row[0] = i
-    for (let j = 1; j <= b.length; j++) {
-      const current = row[j]
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1))
-      previous = current
-    }
-  }
-  return row[b.length]
-}
-
-/*
- * Every word of the query must start a word in the label. Words of 4 letters or more may be one
- * letter off, so "biriyani" finds Biryani and "panner" finds Paneer.
- */
-function fuzzyMatch(label: string, query: string) {
-  const words = label.toLowerCase().split(/\s+/)
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((part) =>
-      words.some(
-        (word) =>
-          word.startsWith(part) ||
-          (part.length >= 4 &&
-            [part.length - 1, part.length, part.length + 1].some(
-              (length) => editDistance(part, word.slice(0, length)) <= 1,
-            )),
-      ),
-    )
-}
-
-function SearchDemo() {
-  const [query, setQuery] = useState('')
-  const trimmed = query.trim()
-
-  const groups: SearchGroupItems<Suggestion>[] = trimmed
-    ? [
-        { value: 'Dishes', items: searchDishes.filter((dish) => fuzzyMatch(dish.label, trimmed)).slice(0, 6) },
-        { value: 'Categories', items: searchCategories.filter((category) => fuzzyMatch(category.label, trimmed)).slice(0, 3) },
-      ].filter((group) => group.items.length > 0)
-    : [
-        { value: 'Recent searches', items: recentSearches },
-        { value: 'Popular dishes', items: popularDishes },
-      ]
-
-  return (
-    <Search
-      items={groups}
-      filteredItems={groups}
-      value={query}
-      onValueChange={setQuery}
-      itemToStringValue={(item: Suggestion) => item.label}
-      openOnInputClick
-    >
-      <SearchInput placeholder="Search dishes, like biryani or paneer" aria-label="Search the menu" />
-      <SearchContent>
-        <SearchEmpty>
-          <p className="text-muted-foreground">
-            No dishes match <span className="font-semibold text-foreground">"{trimmed}"</span>. Try one of
-            these:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {popularDishes.map((dish) => (
-              <Button key={dish.id} variant="outline" size="xs" onClick={() => setQuery(dish.label)}>
-                {dish.label}
-              </Button>
-            ))}
-          </div>
-        </SearchEmpty>
-        <SearchList>
-          {(group: SearchGroupItems<Suggestion>) => (
-            <SearchGroup key={group.value} items={group.items}>
-              <SearchGroupLabel>{group.value}</SearchGroupLabel>
-              <SearchCollection>
-                {(item: Suggestion) => (
-                  <SearchItem key={item.id} value={item}>
-                    {item.kind === 'recent' && (
-                      <>
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                          <HistoryIcon aria-hidden="true" className="size-4" />
-                        </span>
-                        <span className="flex-1 truncate">{item.label}</span>
-                      </>
-                    )}
-                    {item.kind === 'dish' && (
-                      <>
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-secondary">
-                          <FoodMark veg={Boolean(item.veg)} />
-                        </span>
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate font-medium">
-                            <SearchHighlight text={item.label} query={trimmed} />
-                          </span>
-                          <span className="truncate text-xs text-muted-foreground">{item.category}</span>
-                        </span>
-                        {item.price !== undefined && (
-                          <span className="text-sm font-semibold tabular-nums">{formatPrice(item.price)}</span>
-                        )}
-                      </>
-                    )}
-                    {item.kind === 'category' && (
-                      <>
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-highlight text-primary">
-                          <LayoutGridIcon aria-hidden="true" className="size-4" />
-                        </span>
-                        <span className="flex-1 truncate font-medium">
-                          <SearchHighlight text={item.label} query={trimmed} />
-                        </span>
-                        <span className="text-xs text-muted-foreground">Category</span>
-                      </>
-                    )}
-                  </SearchItem>
-                )}
-              </SearchCollection>
-            </SearchGroup>
-          )}
-        </SearchList>
-      </SearchContent>
-    </Search>
-  )
-}
+const SearchDemo = MenuSearch
 
 const orderHistory = Array.from({ length: 10 }, (_, index) => ({
   id: 1037 - index,
